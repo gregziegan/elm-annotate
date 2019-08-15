@@ -1,0 +1,32 @@
+{
+    "type": "package",
+    "name": "thebritican/elm-annotate",
+    "summary": "annotate images",
+    "license": "MIT",
+    "version": "1.0.0",
+    "exposed-modules": [
+        "Annotate",
+        "Annotate.Image",
+        "Annotate.EditState",
+        "Annotate.Environment",
+        "Annotation"
+    ],
+    "elm-version": "0.19.0 <= v < 0.20.0",
+    "dependencies": {
+        "elm/browser": "1.0.0 <= v < 2.0.0",
+        "elm/core": "1.0.0 <= v < 2.0.0",
+        "elm/html": "1.0.0 <= v < 2.0.0",
+        "elm/json": "1.0.0 <= v < 2.0.0",
+        "elm/svg": "1.0.0 <= v < 2.0.0",
+        "elm-community/list-extra": "8.0.0 <= v < 9.0.0",
+        "elm-community/undo-redo": "3.0.0 <= v < 4.0.0",
+        "elm/time": "1.0.0 <= v < 2.0.0",
+        "elm/url": "1.0.0 <= v < 2.0.0",
+        "ohanhi/autoexpand": "3.0.0 <= v < 4.0.0",
+        "ohanhi/keyboard": "2.0.0 <= v < 3.0.0",
+        "tesk9/palette": "1.4.0 <= v < 2.0.0"
+    },
+    "test-dependencies": {
+        "elm-explorations/test": "1.0.0 <= v < 2.0.0"
+    }
+}
