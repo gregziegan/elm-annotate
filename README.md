@@ -100,3 +100,8 @@ Example:
     "../elm-annotate/src"
 ]
 ```
+
+If you want to see some pretty doc pages, use [elm doc preview](https://github.com/dmy/elm-doc-preview).
+
+1. `npm install -g elm-doc-preview`
+2. `edp`
