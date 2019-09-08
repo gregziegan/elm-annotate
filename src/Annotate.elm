@@ -501,7 +501,7 @@ startEditingText model =
 editTextBoxAnnotation : Annotation -> AutoExpand.State -> String -> Model -> Model
 editTextBoxAnnotation annotation autoExpandState autoExpandText model =
     model.edits.present
-        |> mapAtIndex annotation.id (Annotation.updateTextArea autoExpandState autoExpandText)
+        |> mapAtIndex annotation.id (Annotation.updateTextBox autoExpandState autoExpandText)
         |> skipChange model
 
 

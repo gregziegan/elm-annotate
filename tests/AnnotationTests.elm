@@ -2,6 +2,7 @@ module AnnotationTests exposing (suite)
 
 import Annotation exposing (Choice(..))
 import Annotation.Options exposing (StrokeStyle(..))
+import AutoExpand
 import Expect
 import Fuzz exposing (Fuzzer, int, string)
 import Palette
@@ -61,6 +62,16 @@ someString =
         string
 
 
+autoExpandConfig =
+    AutoExpand.config
+        { onInput = \_ -> ()
+        , padding = 0
+        , minRows = 1
+        , maxRows = 4
+        , lineHeight = 12
+        }
+
+
 suite : Test
 suite =
     describe "Annotation"
@@ -88,6 +99,22 @@ suite =
                         |> Annotation.setStyles alteredStyles
                         |> .styles
                         |> Expect.equal alteredStyles
+            ]
+        , describe "updateTextBox"
+            [ describe "tracks"
+                [ fuzz string "text updates" <|
+                    \text ->
+                        textBox
+                            |> Annotation.updateTextBox (AutoExpand.initState autoExpandConfig) text
+                            |> .text
+                            |> Expect.equal text
+                , test "auto-expand changes" <|
+                    \_ ->
+                        textBox
+                            |> Annotation.updateTextBox (AutoExpand.initState autoExpandConfig) ""
+                            |> .autoExpand
+                            |> Expect.equal (AutoExpand.initState autoExpandConfig)
+                ]
             ]
         , describe "move"
             [ fuzz2 int int "shifts start and end positions by x and y" <|

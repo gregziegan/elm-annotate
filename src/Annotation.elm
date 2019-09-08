@@ -3,7 +3,7 @@ module Annotation exposing
     , configure, withVertices
     , Annotation, Def(..), Id, Choice(..), Styles, init, defaultStyles
     , hasNoText, resizeFn, startAndEnd
-    , move, setStyles, updateTextArea
+    , move, setStyles, updateTextBox
     , Config
     )
 
@@ -46,7 +46,7 @@ any events you need.
 
 # Update
 
-@docs move, setStyles, updateTextArea
+@docs move, setStyles, updateTextBox
 
 
 # Custom Annotations
@@ -724,8 +724,8 @@ setStyles styles annotation =
 
 {-| Update the text input state
 -}
-updateTextArea : AutoExpand.State -> String -> Annotation -> Annotation
-updateTextArea autoExpand textValue annotation =
+updateTextBox : AutoExpand.State -> String -> Annotation -> Annotation
+updateTextBox autoExpand textValue annotation =
     { annotation | autoExpand = autoExpand, text = textValue }
 
 
