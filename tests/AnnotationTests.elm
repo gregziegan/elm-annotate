@@ -13,6 +13,8 @@ defaults =
     Annotation.defaultStyles
 
 
+{-| TODO: create default config function
+-}
 config : Annotation.Config ()
 config =
     { events = []
