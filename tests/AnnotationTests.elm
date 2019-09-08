@@ -14,6 +14,10 @@ defaults =
     Annotation.defaultStyles
 
 
+alteredStyles =
+    { defaults | strokeColor = Palette.red }
+
+
 {-| TODO: create default config function
 -}
 config : Annotation.Config ()
@@ -76,6 +80,14 @@ suite =
                             { arrow | start = pos1, end = pos2 }
                     in
                     Expect.equal ( annotation.start, annotation.end ) (Annotation.startAndEnd annotation)
+            ]
+        , describe "setStyles"
+            [ test "tracks styles in the .styles field" <|
+                \_ ->
+                    arrow
+                        |> Annotation.setStyles alteredStyles
+                        |> .styles
+                        |> Expect.equal alteredStyles
             ]
         , describe "move"
             [ fuzz2 int int "shifts start and end positions by x and y" <|
