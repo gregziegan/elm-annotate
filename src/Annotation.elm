@@ -172,9 +172,9 @@ type Choice
     | RoundedRectangle
     | Rectangle
     | Ellipse
-    | SpotlightRoundedRectangle
-    | SpotlightRectangle
-    | SpotlightEllipse
+    | RoundedRectangleSpotlight
+    | RectangleSpotlight
+    | EllipseSpotlight
     | Pixelate
     | TextBox
 
@@ -199,7 +199,9 @@ configure { onInput, onFocus, eventsForVertex, snap, translate, events } =
     , snap = snap
     }
 
-{-| Present annotation with vertices -}
+
+{-| Present annotation with vertices
+-}
 withVertices : (Vertex -> List (Svg.Attribute msg)) -> Config msg -> Config msg
 withVertices eventsForVertex config =
     { config | eventsForVertex = Just eventsForVertex }
@@ -686,13 +688,13 @@ resizeFn snap annotation =
         TextBox ->
             calcShapePos False
 
-        SpotlightRectangle ->
+        RectangleSpotlight ->
             calcShapePos snap
 
-        SpotlightRoundedRectangle ->
+        RoundedRectangleSpotlight ->
             calcShapePos snap
 
-        SpotlightEllipse ->
+        EllipseSpotlight ->
             calcShapePos snap
 
         Pixelate ->
@@ -851,15 +853,15 @@ view ({ events, translate, eventsForVertex, snap } as config) ({ start, end, pos
             viewTextBox config annotation
                 |> groupWithVertices rectangularVertices
 
-        SpotlightRectangle ->
+        RectangleSpotlight ->
             Svg.rect (rectAttributes shape fill ++ events) []
                 |> groupWithVertices rectangularVertices
 
-        SpotlightRoundedRectangle ->
+        RoundedRectangleSpotlight ->
             Svg.rect (roundedRectAttributes shape fill ++ events) []
                 |> groupWithVertices rectangularVertices
 
-        SpotlightEllipse ->
+        EllipseSpotlight ->
             Svg.ellipse (ellipseAttributes shape fill ++ events) []
                 |> groupWithVertices rectangularVertices
 
@@ -906,13 +908,13 @@ viewDefinition { events, snap } { start, end, styles, choice } =
         TextBox ->
             Empty
 
-        SpotlightRectangle ->
+        RectangleSpotlight ->
             SpotlightCutout <| Svg.rect (rectAttributes shape spotlightFill ++ events) []
 
-        SpotlightRoundedRectangle ->
+        RoundedRectangleSpotlight ->
             SpotlightCutout <| Svg.rect (roundedRectAttributes shape spotlightFill ++ events) []
 
-        SpotlightEllipse ->
+        EllipseSpotlight ->
             SpotlightCutout <| Svg.ellipse (ellipseAttributes shape spotlightFill ++ events) []
 
         Pixelate ->

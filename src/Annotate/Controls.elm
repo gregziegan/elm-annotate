@@ -69,9 +69,9 @@ shapes =
 
 spotlights : List Annotation.Choice
 spotlights =
-    [ SpotlightRoundedRectangle
-    , SpotlightRectangle
-    , SpotlightEllipse
+    [ RoundedRectangleSpotlight
+    , RectangleSpotlight
+    , EllipseSpotlight
     ]
 
 
@@ -79,7 +79,7 @@ initialState : State
 initialState =
     { annotation = Arrow
     , shape = RoundedRectangle
-    , spotlight = SpotlightRoundedRectangle
+    , spotlight = RoundedRectangleSpotlight
     , annotationStyles = Annotation.defaultStyles
     , currentDropdown = Nothing
     }
@@ -185,7 +185,7 @@ onKeyDown key state =
             { state | annotation = Arrow }
 
         Character "C" ->
-            { state | annotation = SpotlightRoundedRectangle, spotlight = SpotlightRoundedRectangle }
+            { state | annotation = RoundedRectangleSpotlight, spotlight = RoundedRectangleSpotlight }
 
         Character "H" ->
             { state | annotation = FreeHand }
@@ -206,10 +206,10 @@ onKeyDown key state =
             { state | annotation = TextBox }
 
         Character "G" ->
-            { state | annotation = SpotlightRectangle, spotlight = SpotlightRectangle }
+            { state | annotation = RectangleSpotlight, spotlight = RectangleSpotlight }
 
         Character "I" ->
-            { state | annotation = SpotlightEllipse, spotlight = SpotlightEllipse }
+            { state | annotation = EllipseSpotlight, spotlight = EllipseSpotlight }
 
         Character "P" ->
             { state | annotation = Pixelate }
@@ -409,13 +409,13 @@ changeShapeAndSpotlightDropdowns choice state =
         TextBox ->
             state
 
-        SpotlightRectangle ->
+        RectangleSpotlight ->
             { state | spotlight = choice }
 
-        SpotlightRoundedRectangle ->
+        RoundedRectangleSpotlight ->
             { state | spotlight = choice }
 
-        SpotlightEllipse ->
+        EllipseSpotlight ->
             { state | spotlight = choice }
 
         Pixelate ->
@@ -730,14 +730,14 @@ icon choice =
         TextBox ->
             Icons.viewText
 
-        SpotlightRectangle ->
+        RectangleSpotlight ->
             Icons.viewSpotlightRect
 
-        SpotlightRoundedRectangle ->
+        RoundedRectangleSpotlight ->
             Icons.viewSpotlightRoundedRect
 
-        SpotlightEllipse ->
-            Icons.viewSpotlightEllipse
+        EllipseSpotlight ->
+            Icons.viewEllipseSpotlight
 
         Pixelate ->
             Icons.viewPixelate
@@ -777,13 +777,13 @@ windowsAnnotationToTitle drawing =
         TextBox ->
             "T̲ext"
 
-        SpotlightRectangle ->
+        RectangleSpotlight ->
             "Spotlig̲ht Rectangle"
 
-        SpotlightRoundedRectangle ->
+        RoundedRectangleSpotlight ->
             "Spotlight Rounded Rec̲tangle"
 
-        SpotlightEllipse ->
+        EllipseSpotlight ->
             "Spotlight Elli̲pse"
 
         Pixelate ->
@@ -814,13 +814,13 @@ macAnnotationToTitle choice =
         TextBox ->
             "Text (T)"
 
-        SpotlightRectangle ->
+        RectangleSpotlight ->
             "Spotlight Rectangle (G)"
 
-        SpotlightRoundedRectangle ->
+        RoundedRectangleSpotlight ->
             "Spotlight Rounded Rectangle (C)"
 
-        SpotlightEllipse ->
+        EllipseSpotlight ->
             "Spotlight Ellipse (I)"
 
         Pixelate ->

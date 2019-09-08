@@ -327,13 +327,13 @@ finish config annotation editState =
                 TextBox ->
                     Successful (EditingText annotation.id) annotation
 
-                SpotlightRectangle ->
+                RectangleSpotlight ->
                     finishDrawingSpotlight annotation
 
-                SpotlightRoundedRectangle ->
+                RoundedRectangleSpotlight ->
                     finishDrawingSpotlight annotation
 
-                SpotlightEllipse ->
+                EllipseSpotlight ->
                     finishDrawingSpotlight annotation
 
                 _ ->

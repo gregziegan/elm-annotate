@@ -36,13 +36,13 @@ removeItemIf fn index xs =
 isSpotlight : Choice -> Bool
 isSpotlight choice =
     case choice of
-        SpotlightRectangle ->
+        RectangleSpotlight ->
             True
 
-        SpotlightRoundedRectangle ->
+        RoundedRectangleSpotlight ->
             True
 
-        SpotlightEllipse ->
+        EllipseSpotlight ->
             True
 
         _ ->

@@ -1,4 +1,4 @@
-module Icons exposing (freeHand, viewArrow, viewCornerArrow, viewDownArrow, viewEllipse, viewFill, viewFontSize, viewLine, viewNormalLine, viewPencil, viewPixelate, viewRectangle, viewRoundedRectangle, viewSpotlightEllipse, viewSpotlightRect, viewSpotlightRoundedRect, viewStrokeColor, viewStrokeStyle, viewText, viewUndoArrow)
+module Icons exposing (freeHand, viewArrow, viewCornerArrow, viewDownArrow, viewEllipse, viewEllipseSpotlight, viewFill, viewFontSize, viewLine, viewNormalLine, viewPencil, viewPixelate, viewRectangle, viewRoundedRectangle, viewSpotlightRect, viewSpotlightRoundedRect, viewStrokeColor, viewStrokeStyle, viewText, viewUndoArrow)
 
 import Annotation.Options exposing (StrokeStyle(..))
 import Color exposing (Color)
@@ -43,8 +43,8 @@ viewSpotlightRect =
         ]
 
 
-viewSpotlightEllipse : Html msg
-viewSpotlightEllipse =
+viewEllipseSpotlight : Html msg
+viewEllipseSpotlight =
     svg
         [ width "28", height "28", viewBox "0 0 28 28", Html.Attributes.attribute "xmlns" "http://www.w3.org/2000/svg", Html.Attributes.attribute "xmlns:xlink" "http://www.w3.org/1999/xlink" ]
         [ g [ fill "none", fillRule "evenodd" ]
