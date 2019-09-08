@@ -1,11 +1,17 @@
 module Annotate exposing
-    ( Model, init
-    , Msg, update
+    ( Config, configure
+    , Model, init
+    , Msg, update, keysChanged
     , view
     , subscriptions
     )
 
 {-| An opinionated annotation application.
+
+
+# Config
+
+@docs Config, configure
 
 
 # Model
@@ -15,7 +21,7 @@ module Annotate exposing
 
 # Update
 
-@docs Msg, update
+@docs Msg, update, keysChanged
 
 
 # View
@@ -55,6 +61,16 @@ import UndoList exposing (UndoList)
 import Utils exposing (isSpotlight, mapAtIndex, removeItem)
 
 
+{-| Configuration for your annotator.
+-}
+type Config
+    = Config
+        { environment : Environment
+        , image : Image
+        , pressedKeys : List Key
+        }
+
+
 type alias AnnotationMenu =
     { index : Maybe Int
     , position : Position
@@ -73,10 +89,25 @@ type alias Model =
 
     -- Image Annotator Modals
     , annotationMenu : Maybe AnnotationMenu
+    }
 
-    -- Keys pressed
+
+{-| The Annotator does not need to manipulate these values, but they are essential for the following features:
+
+1.  Providing OS-specific hotkeys
+2.  Determining drawing bounds
+3.  Calculating SVG masks
+4.  Responding to keyboard interactions
+
+-}
+configure :
+    { environment : Environment
+    , image : Image
     , pressedKeys : List Key
     }
+    -> Config
+configure { environment, image, pressedKeys } =
+    Config { environment = environment, image = image, pressedKeys = pressedKeys }
 
 
 {-| -}
@@ -94,7 +125,6 @@ initialModel =
     , clipboard = Nothing
     , controls = Controls.initialState
     , annotationMenu = Nothing
-    , pressedKeys = []
     }
 
 
@@ -131,8 +161,6 @@ type Msg
     | Undo
     | Redo
     | Save
-      -- Keyboard updates
-    | KeyboardMsg Keyboard.Msg
       -- Modal updates
     | CloseAllMenus
     | LogError String
@@ -143,8 +171,8 @@ alterControls fn model =
     { model | controls = fn model.controls }
 
 
-updateSelected : Annotation -> SelectedMsg -> Model -> ( Model, Cmd Msg )
-updateSelected annotation msg model =
+updateSelected : Config -> Annotation -> SelectedMsg -> Model -> ( Model, Cmd Msg )
+updateSelected config annotation msg model =
     case msg of
         FocusTextArea ->
             ( startEditingText model
@@ -179,7 +207,7 @@ updateSelected annotation msg model =
             )
 
         FinishEditingText ->
-            finishEdit annotation model
+            finishEdit config annotation model
 
         SelectAndMoveAnnotation start ->
             ( model
@@ -205,7 +233,7 @@ updateSelected annotation msg model =
             )
 
         FinishedEdit ->
-            finishEdit annotation model
+            finishEdit config annotation model
 
         BringAnnotationToFront ->
             ( bringAnnotationToFront annotation model
@@ -226,12 +254,12 @@ updateSelected annotation msg model =
 
 
 {-| -}
-update : Environment -> Image -> Msg -> Model -> ( Model, Cmd Msg )
-update env image msg ({ pressedKeys } as model) =
+update : Config -> Msg -> Model -> ( Model, Cmd Msg )
+update ((Config { environment, image, pressedKeys }) as config) msg model =
     case msg of
         StartDrawing pos ->
             ( model
-                |> startDrawing pos
+                |> startDrawing config pos
                 |> alterControls Controls.closeDropdown
             , Cmd.none
             )
@@ -263,18 +291,10 @@ update env image msg ({ pressedKeys } as model) =
         GotSelectedMsg id selectedMsg ->
             case Array.get id model.edits.present of
                 Just annotation ->
-                    updateSelected annotation selectedMsg model
+                    updateSelected config annotation selectedMsg model
 
                 Nothing ->
                     ( model, Cmd.none )
-
-        KeyboardMsg keyMsg ->
-            let
-                ( newPressedKeys, maybeKeyChange ) =
-                    Keyboard.updateWithKeyChange anyKeyUpper keyMsg pressedKeys
-            in
-            { model | pressedKeys = newPressedKeys }
-                |> handleKeyboardInteractions env maybeKeyChange
 
         CloseAllMenus ->
             ( model
@@ -341,9 +361,9 @@ resetEditState model =
     { model | editState = EditState.initialState }
 
 
-finishEdit : Annotation -> Model -> ( Model, Cmd Msg )
-finishEdit annotation model =
-    case EditState.finish (annotationConfig model annotation.id) annotation model.editState of
+finishEdit : Config -> Annotation -> Model -> ( Model, Cmd Msg )
+finishEdit config annotation model =
+    case EditState.finish (annotationConfig config model annotation.id) annotation model.editState of
         Successful newState updatedAnnotation ->
             finishValidDrawing updatedAnnotation { model | editState = newState }
 
@@ -360,13 +380,13 @@ finishEdit annotation model =
 -- DRAWING
 
 
-shouldSnap : Model -> Bool
-shouldSnap { pressedKeys } =
+shouldSnap : Config -> Bool
+shouldSnap (Config { pressedKeys }) =
     List.member Shift pressedKeys
 
 
-startDrawing : StartPosition -> Model -> Model
-startDrawing start model =
+startDrawing : Config -> StartPosition -> Model -> Model
+startDrawing config start model =
     let
         numAnnotations =
             Array.length model.edits.present
@@ -385,7 +405,7 @@ startDrawing start model =
             , styles = styles
             }
     in
-    case EditState.startDrawing (annotationConfig model id) drawing model.editState of
+    case EditState.startDrawing (annotationConfig config model id) drawing model.editState of
         Ok ( newEditState, annotation ) ->
             { model
                 | editState = newEditState
@@ -527,7 +547,7 @@ resizeAnnotation annotation curPos model =
 
 copySelectedAnnotation : Annotation -> Model -> Model
 copySelectedAnnotation annotation model =
-    { model | clipboard = Just annotation }
+    { model | clipboard = Just { annotation | id = Array.length model.edits.present } }
 
 
 cutSelectedAnnotation : Annotation -> Model -> Model
@@ -558,11 +578,6 @@ deleteSelectedAnnotation annotation model =
         | edits = UndoList.new (Array.filter ((/=) annotation.id << .id) model.edits.present) model.edits
         , editState = EditState.initialState
     }
-
-
-releaseKey : Key -> Model -> Model
-releaseKey key model =
-    { model | pressedKeys = List.filter ((/=) key) model.pressedKeys }
 
 
 undoEdit : Model -> Model
@@ -675,7 +690,7 @@ controlKeys : OperatingSystem -> List Key
 controlKeys os =
     case os of
         MacOS ->
-            [ Super, ContextMenu ]
+            [ Meta, ContextMenu ]
 
         Windows ->
             [ Control ]
@@ -688,13 +703,13 @@ findAnnotation model =
         |> Maybe.andThen (\id -> Array.get id model.edits.present)
 
 
-handleKeyboardInteractions : Environment -> Maybe KeyChange -> Model -> ( Model, Cmd Msg )
-handleKeyboardInteractions env maybeKeyChange model =
+keysChanged : Config -> Maybe KeyChange -> Model -> ( Model, Cmd Msg )
+keysChanged config maybeKeyChange model =
     case maybeKeyChange of
         Just keyChange ->
             case keyChange of
                 KeyDown key ->
-                    ( withKeyDown env key (findAnnotation model) model, Cmd.none )
+                    ( withKeyDown config key (findAnnotation model) model, Cmd.none )
 
                 KeyUp _ ->
                     ( model, Cmd.none )
@@ -705,109 +720,63 @@ handleKeyboardInteractions env maybeKeyChange model =
             )
 
 
-withKeyDown : Environment -> Key -> Maybe Annotation -> Model -> Model
-withKeyDown env key selected model =
-    let
-        pressedKeys =
-            model.pressedKeys
+withControlPressed : Config -> Key -> Maybe Annotation -> Model -> Model
+withControlPressed (Config { pressedKeys }) key selected model =
+    case ( key, selected ) of
+        ( Character "C", Just annotation ) ->
+            copySelectedAnnotation annotation model
 
-        ctrlPressed =
-            isCtrlPressed pressedKeys env.operatingSystem
+        ( Character "X", Just annotation ) ->
+            cutSelectedAnnotation annotation model
 
-        newModel =
-            alterControls (Controls.onKeyDown key) model
-    in
+        ( Character "V", _ ) ->
+            pasteAnnotation model
+
+        ( Character "Z", _ ) ->
+            if List.member Shift pressedKeys then
+                redoEdit model
+
+            else
+                undoEdit model
+
+        _ ->
+            model
+
+
+withKeyDownHelper : Config -> Key -> Maybe Annotation -> Model -> Model
+withKeyDownHelper (Config { pressedKeys }) key selected model =
     case ( key, selected ) of
         ( Escape, _ ) ->
-            newModel
+            model
                 |> alterControls Controls.closeDropdown
                 |> resetEditState
 
-        ( Character "V", _ ) ->
-            if ctrlPressed then
-                pasteAnnotation newModel
-                    |> releaseKey (Character "V")
-
-            else
-                newModel
-
-        ( Character "Z", _ ) ->
-            if List.member Shift pressedKeys && ctrlPressed then
-                redoEdit newModel
-                    |> releaseKey (Character "Z")
-
-            else if ctrlPressed then
-                undoEdit newModel
-                    |> releaseKey (Character "Z")
-
-            else
-                newModel
-
-        ( Control, _ ) ->
-            if env.operatingSystem == MacOS then
-                newModel
-
-            else if List.member (Character "V") pressedKeys then
-                pasteAnnotation newModel
-                    |> releaseKey (Character "V")
-
-            else if List.member Shift pressedKeys && List.member (Character "Z") pressedKeys then
-                redoEdit newModel
-                    |> releaseKey (Character "Z")
-
-            else if List.member (Character "Z") pressedKeys then
-                undoEdit newModel
-                    |> releaseKey (Character "Z")
-
-            else
-                newModel
-
-        ( Super, _ ) ->
-            if env.operatingSystem == Windows then
-                newModel
-
-            else if List.member (Character "V") newModel.pressedKeys then
-                pasteAnnotation newModel
-                    |> releaseKey (Character "V")
-
-            else if List.member Shift pressedKeys && List.member (Character "Z") pressedKeys then
-                redoEdit newModel
-                    |> releaseKey (Character "Z")
-
-            else if List.member (Character "Z") pressedKeys then
-                undoEdit newModel
-                    |> releaseKey (Character "Z")
-
-            else
-                newModel
-
         ( Delete, Just annotation ) ->
-            deleteSelectedAnnotation annotation newModel
+            deleteSelectedAnnotation annotation model
 
         ( Backspace, Just annotation ) ->
-            deleteSelectedAnnotation annotation newModel
-
-        ( Character "C", Just annotation ) ->
-            if ctrlPressed then
-                copySelectedAnnotation annotation newModel
-
-            else
-                newModel
-
-        ( Character "X", Just annotation ) ->
-            if ctrlPressed then
-                cutSelectedAnnotation annotation newModel
-
-            else
-                newModel
+            deleteSelectedAnnotation annotation model
 
         _ ->
-            newModel
+            model
+
+
+withKeyDown : Config -> Key -> Maybe Annotation -> Model -> Model
+withKeyDown ((Config { environment, pressedKeys }) as config) key selected model =
+    let
+        newModel =
+            alterControls (Controls.onKeyDown key) model
+    in
+    if isCtrlPressed pressedKeys environment.operatingSystem then
+        withControlPressed config key selected newModel
+
+    else
+        withKeyDownHelper config key selected newModel
 
 
 isCtrlPressed : List Key -> OperatingSystem -> Bool
 isCtrlPressed pressedKeys os =
-    List.any (\key -> List.member key pressedKeys) (controlKeys os)
+    List.any (\key -> List.member key (Debug.log "pressed" pressedKeys)) (controlKeys os)
 
 
 viewModals : Model -> Html Msg
@@ -868,7 +837,6 @@ canvasConfig =
         , drew = ContinueDrawing
         , moved = MoveAnnotation
         , resized = ResizeAnnotation
-        , changedKey = KeyboardMsg
         , clicked = \index -> GotSelectedMsg index FinishEditingText
         , rightClicked = ToggleAnnotationMenu
         , finished = \index -> GotSelectedMsg index FinishedEdit
@@ -885,11 +853,11 @@ canvasAttributes editState =
         ++ EditState.canvasEvents canvasConfig editState
 
 
-viewDrawingArea : Model -> Image -> Html Msg
-viewDrawingArea model image =
+viewDrawingArea : Config -> Model -> Html Msg
+viewDrawingArea config model =
     div
         (canvasAttributes model.editState)
-        [ viewSvgArea model (Array.toList model.edits.present) image ]
+        [ viewSvgArea config model (Array.toList model.edits.present) ]
 
 
 withMask : List Annotation -> List (Svg Msg) -> List (Svg Msg)
@@ -902,12 +870,12 @@ withMask annotations svgs =
             svgs
 
 
-viewSvgArea : Model -> List Annotation -> Image -> Svg Msg
-viewSvgArea model annotations image =
+viewSvgArea : Config -> Model -> List Annotation -> Svg Msg
+viewSvgArea ((Config { image }) as config) model annotations =
     let
         svgAnnotations =
             annotations
-                |> List.indexedMap (viewAnnotation model)
+                |> List.indexedMap (viewAnnotation config model)
                 |> withMask annotations
 
         svgs =
@@ -920,21 +888,21 @@ viewSvgArea model annotations image =
         , Attr.height (String.fromInt (round image.height))
         , attribute "xmlns" "http://www.w3.org/2000/svg"
         ]
-        (Definitions.view (List.indexedMap (viewDef model) annotations) :: svgs)
+        (Definitions.view (List.indexedMap (viewDef config model) annotations) :: svgs)
 
 
-viewDef : Model -> Int -> Annotation -> Annotation.Def Msg
-viewDef model index annotation =
-    EditState.viewDefinition (annotationConfig model index) annotation model.editState
+viewDef : Config -> Model -> Int -> Annotation -> Annotation.Def Msg
+viewDef config model index annotation =
+    EditState.viewDefinition (annotationConfig config model index) annotation model.editState
 
 
-viewAnnotation : Model -> Int -> Annotation -> Svg Msg
-viewAnnotation model index annotation =
-    EditState.viewAnnotation (annotationConfig model index) annotation model.editState
+viewAnnotation : Config -> Model -> Int -> Annotation -> Svg Msg
+viewAnnotation config model index annotation =
+    EditState.viewAnnotation (annotationConfig config model index) annotation model.editState
 
 
-annotationConfig : Model -> Int -> AnnotationConfig Msg
-annotationConfig model index =
+annotationConfig : Config -> Model -> Int -> AnnotationConfig Msg
+annotationConfig config model index =
     EditState.configureAnnotation
         { clicked = GotSelectedMsg index << SelectAndMoveAnnotation
         , rightClicked = GotSelectedMsg index << ToggleSelectedAnnotationMenu
@@ -942,7 +910,7 @@ annotationConfig model index =
         , resized = \pos vertex -> GotSelectedMsg index (StartResizingAnnotation pos vertex)
         , typed = GotSelectedMsg index << TextBoxInput
         , focused = GotSelectedMsg index FocusTextArea
-        , snapped = shouldSnap model
+        , snapped = shouldSnap config
         }
 
 
@@ -997,14 +965,14 @@ viewAnnotationMenuItem msg buttonText =
 
 
 {-| -}
-view : Environment -> Image -> Model -> Html Msg
-view env image model =
+view : Config -> Model -> Html Msg
+view config model =
     div
         [ class "annotation-app" ]
         [ viewModals model
         , viewModalMask model.annotationMenu
-        , viewControls env model
-        , viewDrawingArea model image
+        , viewControls config model
+        , viewDrawingArea config model
         ]
 
 
@@ -1049,12 +1017,12 @@ viewHistoryControls os edits =
         ]
 
 
-viewControls : Environment -> Model -> Html Msg
-viewControls env model =
+viewControls : Config -> Model -> Html Msg
+viewControls (Config { environment }) model =
     div
         [ class "controls" ]
-        [ viewHistoryControls env.operatingSystem model.edits
-        , Html.map ControlsUpdate (Controls.view (controlsConfig model.controls.annotationStyles env.operatingSystem) model.controls)
+        [ viewHistoryControls environment.operatingSystem model.edits
+        , Html.map ControlsUpdate (Controls.view (controlsConfig model.controls.annotationStyles environment.operatingSystem) model.controls)
         ]
 
 

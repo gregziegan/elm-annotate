@@ -104,19 +104,17 @@ configureCanvas :
     , drew : Position -> msg
     , moved : Position -> msg
     , resized : Position -> msg
-    , changedKey : Keyboard.Msg -> msg
     , clicked : Annotation.Id -> msg
     , rightClicked : Position -> msg
     , finished : Annotation.Id -> msg
     }
     -> CanvasConfig msg
-configureCanvas { startedDrawing, drew, moved, resized, changedKey, clicked, rightClicked, finished } =
+configureCanvas { startedDrawing, drew, moved, resized, clicked, rightClicked, finished } =
     CanvasConfig
         { startedDrawing = startedDrawing
         , drew = drew
         , moved = moved
         , resized = resized
-        , changedKey = changedKey
         , clicked = clicked
         , rightClicked = rightClicked
         , finished = finished
@@ -145,7 +143,6 @@ type CanvasConfig msg
         , drew : Position -> msg
         , resized : Position -> msg
         , moved : Position -> msg
-        , changedKey : Keyboard.Msg -> msg
         , clicked : Annotation.Id -> msg
         , rightClicked : Position -> msg
         , finished : Annotation.Id -> msg
@@ -458,14 +455,13 @@ subscriptions (CanvasConfig config) editState =
     Sub.batch <|
         case editState of
             NotSelecting ->
-                [ Sub.map config.changedKey Keyboard.subscriptions ]
+                []
 
             Selecting _ ->
-                [ Sub.map config.changedKey Keyboard.subscriptions ]
+                []
 
             Drawing id ->
                 [ Events.onMouseMove (Json.map (config.drew << toDrawingPosition) Position.decoder)
-                , Sub.map config.changedKey Keyboard.subscriptions
                 , Events.onMouseUp (Json.succeed (config.finished id))
                 ]
 
@@ -476,7 +472,6 @@ subscriptions (CanvasConfig config) editState =
 
             Resizing id _ ->
                 [ Events.onMouseMove (Json.map (config.resized << toDrawingPosition) Position.decoder)
-                , Sub.map config.changedKey Keyboard.subscriptions
                 , Events.onMouseUp (Json.succeed (config.finished id))
                 ]
 
