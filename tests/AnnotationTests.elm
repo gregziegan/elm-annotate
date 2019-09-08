@@ -3,7 +3,7 @@ module AnnotationTests exposing (suite)
 import Annotation exposing (Choice(..))
 import Annotation.Options exposing (StrokeStyle(..))
 import Expect
-import Fuzz exposing (Fuzzer, string)
+import Fuzz exposing (Fuzzer, int, string)
 import Palette
 import Position exposing (Position)
 import Test exposing (..)
@@ -76,6 +76,13 @@ suite =
                             { arrow | start = pos1, end = pos2 }
                     in
                     Expect.equal ( annotation.start, annotation.end ) (Annotation.startAndEnd annotation)
+            ]
+        , describe "move"
+            [ fuzz2 int int "shifts start and end positions by x and y" <|
+                \dx dy ->
+                    Annotation.move ( dx, dy ) arrow
+                        |> Annotation.startAndEnd
+                        |> Expect.equal ( Position.shift dx dy arrow.start, Position.shift dx dy arrow.end )
             ]
         , describe "defaultStyles"
             [ test "has a purple stroke color" <|
