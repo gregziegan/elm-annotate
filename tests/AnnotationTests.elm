@@ -7,6 +7,7 @@ import Fuzz exposing (Fuzzer, string)
 import Palette
 import Position exposing (Position)
 import Test exposing (..)
+import TestUtil exposing (position)
 
 
 defaults =
@@ -17,17 +18,30 @@ defaults =
 -}
 config : Annotation.Config ()
 config =
-    { events = []
-    , translate = ( 0, 0 )
-    , snap = False
-    , onInput = \_ -> ()
-    , onFocus = ()
-    , eventsForVertex = Nothing
-    }
+    Annotation.configure
+        { events = []
+        , translate = ( 0, 0 )
+        , snap = False
+        , onInput = \_ -> ()
+        , onFocus = ()
+        , eventsForVertex = Nothing
+        }
+
+
+start =
+    Position 0 0
+
+
+end =
+    Position 10 10
+
+
+arrow =
+    Annotation.init config { id = 1, start = start, end = end, choice = Arrow, styles = defaults }
 
 
 textBox =
-    Annotation.init config { id = 1, start = Position 0 0, end = Position 10 10, choice = Arrow, styles = defaults }
+    Annotation.init config { id = 1, start = start, end = end, choice = TextBox, styles = defaults }
 
 
 someString : Fuzzer String
@@ -53,6 +67,15 @@ suite =
             , fuzz someString "returns false when text is not empty" <|
                 \str ->
                     Expect.equal False (Annotation.hasNoText { textBox | text = str })
+            ]
+        , describe "startAndEnd"
+            [ fuzz2 position position "returns start and end in a tuple" <|
+                \pos1 pos2 ->
+                    let
+                        annotation =
+                            { arrow | start = pos1, end = pos2 }
+                    in
+                    Expect.equal ( annotation.start, annotation.end ) (Annotation.startAndEnd annotation)
             ]
         , describe "defaultStyles"
             [ test "has a purple stroke color" <|
