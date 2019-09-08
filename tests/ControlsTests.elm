@@ -5,7 +5,6 @@ import Annotation exposing (Choice(..))
 import Annotation.Options as Options exposing (Fill, FontSize, StrokeColor, StrokeStyle(..))
 import Color exposing (Color)
 import Expect exposing (Expectation)
-import Fuzz exposing (int)
 import Helpers.Controls exposing (..)
 import Keyboard exposing (Key(..))
 import Palette

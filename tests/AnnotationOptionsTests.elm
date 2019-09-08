@@ -3,7 +3,6 @@ module AnnotationOptionsTests exposing (suite)
 import Annotation.Options as Options exposing (StrokeStyle(..))
 import Color exposing (Color)
 import Expect exposing (Expectation)
-import Fuzz exposing (int)
 import Palette
 import Test exposing (..)
 

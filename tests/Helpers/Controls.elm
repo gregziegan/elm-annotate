@@ -3,7 +3,6 @@ module Helpers.Controls exposing (fill, fontSize, isWaiting, key, shapesDropdown
 import Annotate.Controls exposing (Dropdown, DropdownTrigger(..), DropdownType(..), Msg(..), State, initialState)
 import Annotation.Options as Options exposing (Fill, FontSize, StrokeColor, StrokeStyle(..))
 import Color exposing (Color)
-import Fuzz exposing (int)
 import Keyboard exposing (Key(..))
 import Palette
 
